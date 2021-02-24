@@ -28,6 +28,26 @@ exports.getActivities = (req, res) => {
     })
 }
 
+exports.addTimeTracking = (req, res) => {
+  if(!req.body || !req.body.duration || !req.params.activityId) {
+    res.status(400).send('Invalid request')
+  }
+  authDB()
+  const now = admin.firestore.FieldValue.serverTimestamp()
+  db.collection('activities').doc(req.params.activityId).update({
+    updated: now,
+    logs: admin.firestore.FieldValue.arrayUnion(req.body),
+    totalDuration: admin.firestore.FieldValue.increment(parseInt(req.body.duration))
+  })
+  .then(() => {
+    this.getActivities(req, res)
+  })
+  .catch(err => {
+    console.log(err)
+    res.status(500).send('Error updating activity: ' + err)
+  })
+}
+
 exports.postActivity = (req, res) => {
   if(!req.body || !req.body.name || !req.body.userId){
     res.status(401).send('Missing new Activity data')
